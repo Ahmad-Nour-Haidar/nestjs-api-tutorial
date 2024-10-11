@@ -47,3 +47,13 @@ nest g r <resolver-name>
 ✏️	Rename / move a file(s) / folder(s)
 ✏️	Move files
 ✏️	Move folder
+
+------------------------------------------------------------------
+
+yarn add -D prisma
+
+yarn add -D @prisma/client
+
+npx prisma init
+
+
