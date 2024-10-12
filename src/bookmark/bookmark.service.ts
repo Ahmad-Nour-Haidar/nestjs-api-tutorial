@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookmarkDto, EditBookmarkDto } from './dto';
 
@@ -6,38 +10,55 @@ import { CreateBookmarkDto, EditBookmarkDto } from './dto';
 export class BookmarkService {
   constructor(private prisma: PrismaService) {}
 
-  findAll(userId: number) {
-    return this.prisma.bookmark.findMany({
+  async findAll(userId: number) {
+    const bookmarks = await this.prisma.bookmark.findMany({
       where: {
         user_id: userId,
       },
     });
+
+    return {
+      status: true,
+      message: 'Bookmarks fetched successfully',
+      bookmarks,
+    };
   }
 
-  findOne(userId: number, bookmarkId: number) {
-    return this.prisma.bookmark.findFirst({
+  async findOne(userId: number, bookmarkId: number) {
+    const bookmark = await this.prisma.bookmark.findFirst({
       where: {
         id: bookmarkId,
         user_id: userId,
       },
     });
+
+    if (!bookmark) {
+      throw new NotFoundException('Bookmark not found');
+    }
+
+    return {
+      status: true,
+      message: 'Bookmark fetched successfully',
+      bookmark,
+    };
   }
 
   async create(userId: number, dto: CreateBookmarkDto) {
-    return this.prisma.bookmark.create({
+    const bookmark = await this.prisma.bookmark.create({
       data: {
         user_id: userId,
         ...dto,
       },
     });
+
+    return {
+      status: true,
+      message: 'Bookmark created successfully',
+      bookmark,
+    };
   }
 
-  async update(
-    userId: number,
-    bookmarkId: number,
-    dto: EditBookmarkDto,
-  ) {
-    // get the bookmark by id
+  async update(userId: number, bookmarkId: number, dto: EditBookmarkDto) {
     const bookmark = await this.prisma.bookmark.findUnique({
       where: {
         id: bookmarkId,
@@ -45,12 +66,11 @@ export class BookmarkService {
       },
     });
 
-    // check if user owns the bookmark
     if (!bookmark) {
-      throw new ForbiddenException('Access to resources denied');
+      throw new NotFoundException('Bookmark not found');
     }
 
-    return this.prisma.bookmark.update({
+    const updatedBookmark = await this.prisma.bookmark.update({
       where: {
         id: bookmarkId,
       },
@@ -58,6 +78,12 @@ export class BookmarkService {
         ...dto,
       },
     });
+
+    return {
+      status: true,
+      message: 'Bookmark updated successfully',
+      bookmark: updatedBookmark,
+    };
   }
 
   async remove(userId: number, bookmarkId: number) {
